@@ -1,0 +1,7 @@
+Llaves RSA cargadas.
+Tabla de servicios inicializada.
+ServidorPrincipal escuchando en puerto 8000
+[Delegado] firma=386787600 ns, cifTabla=6300900 ns, verif=409300 ns, cifRespSim=258600 ns, cifRespAsim=1917000 ns
+[Delegado] firma=404277600 ns, cifTabla=6297800 ns, verif=337700 ns, cifRespSim=612600 ns, cifRespAsim=2641500 ns
+[Delegado] firma=906209800 ns, cifTabla=480900 ns, verif=387600 ns, cifRespSim=523800 ns, cifRespAsim=220200 ns
+[Delegado] firma=993492800 ns, cifTabla=257200 ns, verif=470300 ns, cifRespSim=195900 ns, cifRespAsim=163100 ns
