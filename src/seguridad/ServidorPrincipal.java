@@ -40,7 +40,7 @@ public class ServidorPrincipal {
     }
 
     private void escuchar() throws Exception {
-        ServerSocket ss = new ServerSocket(PUERTO);
+        ServerSocket ss = new ServerSocket(PUERTO, 200);
         while (true) {
             Socket cliente = ss.accept();
             new Thread(new DelegadoServidor(cliente, rsaPublic, rsaPrivate, tablaServicios)).start();
