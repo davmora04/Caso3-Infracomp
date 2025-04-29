@@ -64,8 +64,12 @@ public class MedidorVelocidadCifrado {
         double opsPorSegRSA = 1e9 / nsPorOpRSA;
 
         // 9) Mostrar resultados en consola
-        System.out.println(" Medidor de velocidad de cifrado ");
-        System.out.printf("AES-256-CBC : %.2f ns/op → %.0f ops/s%n", nsPorOpAES, opsPorSegAES);
-        System.out.printf("RSA-1024    : %.2f ns/op → %.0f ops/s%n", nsPorOpRSA, opsPorSegRSA);
+        System.out.println("--- Medidor de velocidad de cifrado ---");
+        System.out.printf("%-15s %20s %20s%n", 
+            "Algoritmo", "Tiempo medio (ns/op)", "Ops por segundo");
+        System.out.printf("%-15s %20.2f %20.0f%n", 
+            "AES-256-CBC", nsPorOpAES, opsPorSegAES);
+        System.out.printf("%-15s %20.2f %20.0f%n", 
+            "RSA-1024",    nsPorOpRSA, opsPorSegRSA);
     }
 }
