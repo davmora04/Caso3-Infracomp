@@ -1,4 +1,3 @@
-// src/seguridad/Cliente.java
 package seguridad;
 
 import java.io.*;
