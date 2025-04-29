@@ -33,26 +33,37 @@ public class DelegadoServidor implements Runnable {
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
 
             // 1) Handshake DH + firma RSA
+            System.out.println("[Servidor] Iniciando handshake DH + firma RSA");
+
             long tFirmaInicio = System.nanoTime();
             DHParameterSpec dhSpec = CriptoUtils.generarParametrosDH();
             KeyPair kpDH = CriptoUtils.generarClavesDH(dhSpec);
             byte[] pB   = dhSpec.getP().toByteArray();
             byte[] gB   = dhSpec.getG().toByteArray();
             byte[] ySB  = ((DHPublicKey)kpDH.getPublic()).getY().toByteArray();
+            System.out.printf("[Servidor] Parámetros DH: p(%d bytes), g(%d bytes), yS(%d bytes)%n", 
+                          pB.length, gB.length, ySB.length);
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(pB); baos.write(gB); baos.write(ySB);
             byte[] firma = CriptoUtils.firmarRSA(rsaPrivate, baos.toByteArray());
-            long tFirma = System.nanoTime() - tFirmaInicio;
+            System.out.printf("[Servidor] Firma RSA generada (%d bytes)%n", firma.length);
 
+            long tFirma = System.nanoTime() - tFirmaInicio;
+            
             out.writeInt(pB.length); out.write(pB);
             out.writeInt(gB.length); out.write(gB);
             out.writeInt(ySB.length); out.write(ySB);
             out.writeInt(firma.length); out.write(firma);
+            System.out.println("[Servidor] Parámetros y firma enviados al cliente\n");
+
 
             // 2) Recibir clave pública DH cliente
             int lenYc = in.readInt();
             byte[] yC = new byte[lenYc];
             in.readFully(yC);
+            System.out.printf("[Servidor] Recibida clave DH pública del cliente (yC, %d bytes)%n", lenYc);
+
             DHPublicKeySpec keySpecC =
                 new DHPublicKeySpec(new BigInteger(yC), dhSpec.getP(), dhSpec.getG());
             PublicKey pubC = KeyFactory.getInstance("DH").generatePublic(keySpecC);
@@ -62,28 +73,41 @@ public class DelegadoServidor implements Runnable {
             ka.init(kpDH.getPrivate());
             ka.doPhase(pubC, true);
             SecretKeys keys = CriptoUtils.derivarLlaves(ka.generateSecret());
+            System.out.println("[Servidor] Llaves de sesión derivadas (AES + HMAC)\n");
+
 
             // 4) Cifrar tabla + HMAC
             StringBuilder sb = new StringBuilder("ID;Servicio\n");
             for (ServidorPrincipal.Servicio s : tabla.values()) {
                 sb.append(s.id).append(";").append(s.nombre).append("\n");
             }
+
+            System.out.println("[Servidor] Cifrando tabla de servicios y calculando HMAC");
+
             byte[] claroTabla = sb.toString().getBytes();
 
             long tCifTablaIni = System.nanoTime();
             byte[] iv1 = CriptoUtils.generarIV();
             byte[] ct1 = CriptoUtils.cifrarAES(keys.keyEnc, iv1, claroTabla);
             byte[] hm1 = CriptoUtils.calcularHMAC(keys.keyHmac, ct1);
+            System.out.printf("[Servidor] IV1(%d bytes), CT1(%d bytes), HMAC1(%d bytes)%n",
+                          iv1.length, ct1.length, hm1.length);
+
             long tCifTabla = System.nanoTime() - tCifTablaIni;
 
             out.writeInt(iv1.length); out.write(iv1);
             out.writeInt(ct1.length); out.write(ct1);
             out.writeInt(hm1.length); out.write(hm1);
+            System.out.println("[Servidor] Tabla cifrada enviada al cliente\n");
+
 
             // 5) Recibir petición ID cifrado + HMAC
+            System.out.println("[Servidor] Esperando petición cifrada de ID de servicio");
+
             int iv2l = in.readInt(); byte[] iv2 = new byte[iv2l]; in.readFully(iv2);
             int ct2l = in.readInt(); byte[] ct2 = new byte[ct2l]; in.readFully(ct2);
             int hm2l = in.readInt(); byte[] hm2 = new byte[hm2l]; in.readFully(hm2);
+            System.out.printf("[Servidor] Recibidos IV2(%d), CT2(%d), HMAC2(%d)%n", iv2l, ct2l, hm2l);
 
             long tVerIni = System.nanoTime();
             if (!CriptoUtils.verificarHMAC(keys.keyHmac, ct2, hm2)) return;

@@ -42,7 +42,7 @@ package seguridad;
           return new SecretKeys(keyEnc, keyHmac);
       }
   
-      // Genera un IV de 16 bytes aleatorio
+      // Generación de un IV de 16 bytes aleatorio
       public static byte[] generarIV() {
           byte[] iv = new byte[16];
           RNG.nextBytes(iv);
@@ -73,7 +73,7 @@ package seguridad;
           return mac.doFinal(data);
       }
   
-      // Verifica HMAC-SHA256 (constant-time compare)
+      // Verifica HMAC-SHA256 
       public static boolean verificarHMAC(byte[] key, byte[] data, byte[] hmacToCheck) throws Exception {
           byte[] calc = calcularHMAC(key, data);
           if (calc.length != hmacToCheck.length) return false;

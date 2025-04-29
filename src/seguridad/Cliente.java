@@ -23,7 +23,6 @@ public class Cliente {
 
     public static void main(String[] args) {
         try {
-            // --- Diagnóstico inicial ---
             // 1) Parámetros DH de 1024 bits
             DHParameterSpec dhSpecTest = CriptoUtils.generarParametrosDH();
             System.out.println("DH p bit length = " + dhSpecTest.getP().bitLength());
@@ -37,7 +36,6 @@ public class Cliente {
             byte[] dummySecret = new byte[128];
             SecretKeys testKeys = CriptoUtils.derivarLlaves(dummySecret);
             System.out.println("Longitud de keyEnc en bits = " + (testKeys.keyEnc.length * 8));
-            // --- Fin diagnóstico ---
 
             try (Scanner sc = new Scanner(System.in)) {
                 System.out.println("Seleccione modo:");
@@ -131,10 +129,15 @@ public class Cliente {
                 PublicKey rsaPub = KeyFactory.getInstance("RSA")
                     .generatePublic(new X509EncodedKeySpec(pub));
                 
+                System.out.println("[Cliente] Leyendo parámetros DH y firma del servidor");
                 int lp = in.readInt(); byte[] pB = new byte[lp]; in.readFully(pB);
                 int lg = in.readInt(); byte[] gB = new byte[lg]; in.readFully(gB);
                 int ly = in.readInt(); byte[] ySB = new byte[ly]; in.readFully(ySB);
                 int lf = in.readInt(); byte[] sig = new byte[lf]; in.readFully(sig);
+                
+                System.out.printf("[Cliente] Recibido p(%d), g(%d), yS(%d), firma(%d)%n",
+                          lp, lg, ly, lf);
+
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 baos.write(pB); baos.write(gB); baos.write(ySB);
                 if (!CriptoUtils.verificarRSA(rsaPub, baos.toByteArray(), sig)) {
@@ -142,12 +145,18 @@ public class Cliente {
                     cerrar();
                     return false;
                 }
+                System.out.println("[Cliente] Firma verificada con éxito\n");
+
                 
                 BigInteger p = new BigInteger(pB), g = new BigInteger(gB);
                 DHParameterSpec dhSpec = new DHParameterSpec(p, g);
                 KeyPair kpC = CriptoUtils.generarClavesDH(dhSpec);
                 byte[] yC = ((DHPublicKey)kpC.getPublic()).getY().toByteArray();
+                System.out.printf("[Cliente] Enviando clave pública DH yC (%d bytes)%n", yC.length);
+
                 out.writeInt(yC.length); out.write(yC);
+
+                System.out.println("[Cliente] Derivando llaves de sesión");
 
                 DHPublicKeySpec specS = new DHPublicKeySpec(new BigInteger(ySB), p, g);
                 PublicKey pubS = KeyFactory.getInstance("DH").generatePublic(specS);
@@ -155,9 +164,15 @@ public class Cliente {
                 ka.init(kpC.getPrivate()); ka.doPhase(pubS, true);
                 keys = CriptoUtils.derivarLlaves(ka.generateSecret());
 
+                System.out.println("[Cliente] Leyendo IV, ciphertext y HMAC de la tabla");
+
                 int iv1l = in.readInt(); byte[] iv1 = new byte[iv1l]; in.readFully(iv1);
                 int ct1l = in.readInt(); byte[] ct1 = new byte[ct1l]; in.readFully(ct1);
                 int hm1l = in.readInt(); byte[] hm1 = new byte[hm1l]; in.readFully(hm1);
+                
+                System.out.printf("[Cliente] Recibido IV1(%d), CT1(%d), HMAC1(%d)%n\n", iv1l, ct1l, hm1l);
+
+
                 if (!CriptoUtils.verificarHMAC(keys.keyHmac, ct1, hm1)) {
                     System.err.println("Error en la consulta");
                     cerrar();
