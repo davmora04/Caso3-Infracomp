@@ -26,7 +26,7 @@ public class MedidorVelocidadCifrado {
         RNG.nextBytes(claveAES);
         byte[] iv = CriptoUtils.generarIV();
 
-        // 4) Cargar la llave pública RSA desde llaves/public.key
+        // 4) Cargar la llave pública RSA 
         byte[] pubBytes = Files.readAllBytes(Path.of("llaves/public.key"));
         PublicKey rsaPublica = KeyFactory.getInstance("RSA")
             .generatePublic(new X509EncodedKeySpec(pubBytes));
@@ -43,7 +43,7 @@ public class MedidorVelocidadCifrado {
             rsa.doFinal(datosRSA);
         }
 
-        // 7) Medir AES: tiempo total para ITERACIONES_AES operaciones
+        // 7) Medir AES
         long tInicio = System.nanoTime();
         for (int i = 0; i < ITERACIONES_AES; i++) {
             CriptoUtils.cifrarAES(claveAES, iv, datosAES);
@@ -52,7 +52,7 @@ public class MedidorVelocidadCifrado {
         double nsPorOpAES = (tFin - tInicio) / (double) ITERACIONES_AES;
         double opsPorSegAES = 1e9 / nsPorOpAES;
 
-        // 8) Medir RSA: tiempo total para ITERACIONES_RSA operaciones
+        // 8) Medir RSA
         tInicio = System.nanoTime();
         for (int i = 0; i < ITERACIONES_RSA; i++) {
             Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -63,7 +63,7 @@ public class MedidorVelocidadCifrado {
         double nsPorOpRSA = (tFin - tInicio) / (double) ITERACIONES_RSA;
         double opsPorSegRSA = 1e9 / nsPorOpRSA;
 
-        // 9) Mostrar resultados en consola
+        // 9) Mostrar resultados 
         System.out.println("--- Medidor de velocidad de cifrado ---");
         System.out.printf("%-15s %20s %20s%n", 
             "Algoritmo", "Tiempo medio (ns/op)", "Ops por segundo");
